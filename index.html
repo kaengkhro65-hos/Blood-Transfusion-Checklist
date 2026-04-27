@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPG Checklist: การให้เลือด</title>
+    <!-- Tailwind CSS สำหรับการจัดการ Layout และความสวยงาม -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- ฟอนต์สารบรรณ (Sarabun) -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- ไอคอนจาก Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f3f4f6;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Custom Checkbox Style */
+        .custom-checkbox {
+            appearance: none;
+            background-color: #fff;
+            margin: 0;
+            font: inherit;
+            color: currentColor;
+            width: 1.5em;
+            height: 1.5em;
+            border: 2px solid #cbd5e1;
+            border-radius: 0.35em;
+            display: grid;
+            place-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .custom-checkbox::before {
+            content: "";
+            width: 0.85em;
+            height: 0.85em;
+            clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+            transform: scale(0);
+            transform-origin: bottom left;
+            transition: 120ms transform ease-in-out;
+            box-shadow: inset 1em 1em white;
+            background-color: white;
+        }
+        .custom-checkbox:checked {
+            background-color: #ef4444; /* Red-500 */
+            border-color: #ef4444;
+        }
+        .custom-checkbox:checked::before {
+            transform: scale(1);
+        }
+        .checked-text {
+            color: #9ca3af;
+            text-decoration: line-through;
+        }
+        
+        /* Smooth reveal for sections */
+        .section-content {
+            transition: max-height 0.3s ease-out, padding 0.3s ease;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="text-gray-800 pb-20">
+
+    <!-- Header & Progress Bar -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="bg-red-600 text-white p-4 flex items-center justify-between">
+            <div>
+                <h1 class="text-xl font-bold flex items-center gap-2">
+                    <i class="ph ph-drop text-2xl"></i>
+                    Checklist การให้เลือด
+                </h1>
+                <p class="text-red-100 text-sm mt-1">PMK-WND-012</p>
+            </div>
+            <button onclick="resetChecklist()" class="bg-red-700 hover:bg-red-800 p-2 rounded-full transition-colors" title="เริ่มใหม่">
+                <i class="ph ph-arrow-counter-clockwise text-xl"></i>
+            </button>
+        </div>
+        <div class="p-4 bg-white border-b border-gray-200">
+            <div class="flex justify-between text-sm font-semibold text-gray-600 mb-2">
+                <span>ความคืบหน้า (Progress)</span>
+                <span id="progress-text">0%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div id="progress-bar" class="bg-red-500 h-2.5 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto max-w-md p-4 space-y-4" id="checklist-container">
+        <!-- Checklist items will be injected here via JavaScript -->
+    </main>
+
+    <!-- Emergency Section (ภาวะแทรกซ้อน) -->
+    <section class="container mx-auto max-w-md p-4 mt-6">
+        <div class="bg-red-50 border border-red-200 rounded-xl overflow-hidden shadow-sm">
+            <button onclick="toggleSection('emergency-content', 'emergency-icon')" class="w-full bg-red-100 text-red-700 p-4 font-bold flex justify-between items-center text-left">
+                <span class="flex items-center gap-2">
+                    <i class="ph-fill ph-warning-octagon text-2xl"></i>
+                    กรณีฉุกเฉิน / ภาวะแทรกซ้อน
+                </span>
+                <i id="emergency-icon" class="ph ph-caret-down text-xl transition-transform"></i>
+            </button>
+            <div id="emergency-content" class="section-content bg-white hidden">
+                <div class="p-4 space-y-3" id="emergency-container">
+                    <!-- Emergency items injected via JS -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modal for Messages (แทน alert) -->
+    <div id="message-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-xl p-6 m-4 max-w-sm w-full transform scale-95 transition-transform duration-300" id="message-modal-content">
+            <div class="text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                    <i class="ph ph-check text-2xl text-green-600"></i>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900" id="modal-title">ล้างข้อมูลสำเร็จ</h3>
+                <p class="text-sm text-gray-500 mt-2" id="modal-desc">เริ่มรายการเช็คลิสต์ใหม่เรียบร้อยแล้ว</p>
+                <button onclick="closeModal()" class="mt-6 w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none sm:text-sm">
+                    ตกลง
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ข้อมูล Checklist
+        const checklistData = [
+            {
+                id: 'pre',
+                title: '1. ก่อนให้เลือด (Pre-transfusion)',
+                color: 'blue',
+                icon: 'ph-clipboard-text',
+                items: [
+                    { id: 'pre1', text: 'ตรวจสอบคำสั่งแพทย์ (Doctor order)' },
+                    { id: 'pre2', text: 'ตรวจสอบความถูกต้องของผู้ป่วย (ชื่อ-สกุล, HN, ป้ายข้อมือ)' },
+                    { id: 'pre3', text: 'ตรวจสอบเลือด (ชนิด, หมู่ ABO/Rh, วันหมดอายุ, Unit No.) ให้ตรงกับผู้ป่วยและใบขอเลือด' },
+                    { id: 'pre4', text: 'วัดสัญญาณชีพ (V/S) ก่อนให้เลือดไม่เกิน 30 นาที (หาก T > 37.8°C ให้รายงานแพทย์)' },
+                    { id: 'pre5', text: 'เตรียมอุปกรณ์ (Blood set) และ 0.9% NSS (ห้ามผสมยา/สารอื่น)' },
+                    { id: 'pre6', text: 'อธิบายผู้ป่วย/ญาติ และล้างมือ+สวมถุงมือ' }
+                ]
+            },
+            {
+                id: 'during',
+                title: '2. ขณะให้เลือด (During transfusion)',
+                color: 'orange',
+                icon: 'ph-clock',
+                items: [
+                    { id: 'dur1', text: 'เริ่มให้เลือดช้าๆ (2-5 ml/min) ใน 15 นาทีแรก' },
+                    { id: 'dur2', text: 'เฝ้าสังเกตอาการผู้ป่วยอย่างใกล้ชิดตลอด 15 นาทีแรก (เฝ้าระวังภาวะแพ้รุนแรง)' },
+                    { id: 'dur3', text: 'วัดและบันทึกสัญญาณชีพ (V/S) ซ้ำ หลังเริ่มให้เลือด 15 นาที' },
+                    { id: 'dur4', text: 'ปรับอัตราหยดตามแผนการรักษา (ปกติ 1 ยูนิต หมดภายใน 2-4 ชม.)' }
+                ]
+            },
+            {
+                id: 'post',
+                title: '3. หลังให้เลือด (Post-transfusion)',
+                color: 'green',
+                icon: 'ph-check-circle',
+                items: [
+                    { id: 'pos1', text: 'Flush สายด้วย 0.9% NSS เพื่อล้างเลือดในสายให้หมด' },
+                    { id: 'pos2', text: 'วัดและบันทึกสัญญาณชีพ (V/S) หลังให้เลือดเสร็จทันที' },
+                    { id: 'pos3', text: 'ทิ้งถุงเลือดและชุดให้เลือดลงในถังขยะติดเชื้ออย่างถูกต้อง' },
+                    { id: 'pos4', text: 'บันทึกใน Nurse note (เวลาเริ่ม-หมด, ชนิด/ปริมาณเลือด, Unit No., อาการ)' }
+                ]
+            }
+        ];
+
+        const emergencyData = [
+            { id: 'em1', text: 'หยุดให้เลือดทันที! (Stop transfusion)' },
+            { id: 'em2', text: 'เปลี่ยนชุดสายน้ำเกลือใหม่ และให้ 0.9% NSS หยดช้าๆ (KVO)' },
+            { id: 'em3', text: 'ประเมิน V/S และรายงานแพทย์เวรทันที' },
+            { id: 'em4', text: 'ตรวจสอบป้ายเลือด ใบคล้องเลือด และข้อมูลผู้ป่วยซ้ำ' },
+            { id: 'em5', text: 'ส่งถุงเลือดที่เหลือพร้อมชุดสายให้เลือด คืนธนาคารเลือดเพื่อตรวจสอบ' }
+        ];
+
+        // สถานะเก็บข้อมูล Checkbox
+        let state = JSON.parse(localStorage.getItem('cpg_blood_state')) || {};
+
+        // ฟังก์ชันเริ่มการทำงาน
+        function init() {
+            renderChecklist();
+            renderEmergency();
+            updateProgress();
+        }
+
+        // สร้าง HTML สำหรับ Checklist ปกติ
+        function renderChecklist() {
+            const container = document.getElementById('checklist-container');
+            container.innerHTML = '';
+
+            checklistData.forEach(section => {
+                const sectionEl = document.createElement('div');
+                sectionEl.className = 'bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden';
+                
+                // Header
+                const headerHtml = `
+                    <button onclick="toggleSection('${section.id}-content', '${section.id}-icon')" class="w-full p-4 flex justify-between items-center bg-white hover:bg-gray-50 transition-colors border-b border-gray-100">
+                        <div class="flex items-center gap-3 font-semibold text-gray-800">
+                            <i class="ph ${section.icon} text-2xl text-${section.color}-500"></i>
+                            ${section.title}
+                        </div>
+                        <i id="${section.id}-icon" class="ph ph-caret-up text-gray-400 transition-transform"></i>
+                    </button>
+                `;
+
+                // Items
+                let itemsHtml = `<div id="${section.id}-content" class="section-content p-4 space-y-4 bg-gray-50/50">`;
+                section.items.forEach(item => {
+                    const isChecked = state[item.id] ? 'checked' : '';
+                    const textClass = state[item.id] ? 'checked-text' : 'text-gray-700';
+                    itemsHtml += `
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <div class="flex-shrink-0 mt-0.5">
+                                <input type="checkbox" id="${item.id}" class="custom-checkbox" ${isChecked} onchange="toggleItem('${item.id}', true)">
+                            </div>
+                            <span id="text-${item.id}" class="text-sm leading-relaxed select-none ${textClass} transition-colors duration-200">
+                                ${item.text}
+                            </span>
+                        </label>
+                    `;
+                });
+                itemsHtml += `</div>`;
+
+                sectionEl.innerHTML = headerHtml + itemsHtml;
+                container.appendChild(sectionEl);
+            });
+        }
+
+        // สร้าง HTML สำหรับ Emergency
+        function renderEmergency() {
+            const container = document.getElementById('emergency-container');
+            container.innerHTML = '';
+            
+            emergencyData.forEach(item => {
+                const isChecked = state[item.id] ? 'checked' : '';
+                const textClass = state[item.id] ? 'checked-text' : 'text-gray-800 font-medium';
+                const html = `
+                    <label class="flex items-start gap-3 cursor-pointer bg-red-50 p-3 rounded-lg border border-red-100 hover:bg-red-100 transition-colors">
+                        <div class="flex-shrink-0 mt-0.5">
+                            <input type="checkbox" id="${item.id}" class="custom-checkbox" ${isChecked} onchange="toggleItem('${item.id}', false)">
+                        </div>
+                        <span id="text-${item.id}" class="text-sm leading-relaxed select-none ${textClass} transition-colors duration-200">
+                            ${item.text}
+                        </span>
+                    </label>
+                `;
+                container.innerHTML += html;
+            });
+        }
+
+        // จัดการคลิก Checkbox
+        function toggleItem(id, isNormalItem) {
+            const checkbox = document.getElementById(id);
+            const textSpan = document.getElementById(`text-${id}`);
+            
+            state[id] = checkbox.checked;
+            
+            // อัปเดต CSS ข้อความ
+            if (checkbox.checked) {
+                textSpan.classList.add('text-gray-400', 'line-through');
+                textSpan.classList.remove('text-gray-700', 'text-gray-800', 'font-medium');
+            } else {
+                textSpan.classList.remove('text-gray-400', 'line-through');
+                if (isNormalItem) {
+                    textSpan.classList.add('text-gray-700');
+                } else {
+                    textSpan.classList.add('text-gray-800', 'font-medium');
+                }
+            }
+
+            saveState();
+            if (isNormalItem) updateProgress();
+        }
+
+        // คำนวณความคืบหน้า (Progress Bar)
+        function updateProgress() {
+            let total = 0;
+            let checked = 0;
+
+            checklistData.forEach(section => {
+                section.items.forEach(item => {
+                    total++;
+                    if (state[item.id]) checked++;
+                });
+            });
+
+            const percentage = Math.round((checked / total) * 100);
+            document.getElementById('progress-bar').style.width = percentage + '%';
+            document.getElementById('progress-text').innerText = percentage + '%';
+
+            // เปลี่ยนสี Progress Bar เมื่อเต็ม 100%
+            if (percentage === 100) {
+                document.getElementById('progress-bar').classList.remove('bg-red-500');
+                document.getElementById('progress-bar').classList.add('bg-green-500');
+            } else {
+                document.getElementById('progress-bar').classList.remove('bg-green-500');
+                document.getElementById('progress-bar').classList.add('bg-red-500');
+            }
+        }
+
+        // เปิด/ปิด Section
+        function toggleSection(contentId, iconId) {
+            const content = document.getElementById(contentId);
+            const icon = document.getElementById(iconId);
+            
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                icon.style.transform = 'rotate(0deg)';
+                if (contentId === 'emergency-content') icon.style.transform = 'rotate(180deg)';
+            } else {
+                content.classList.add('hidden');
+                icon.style.transform = 'rotate(180deg)';
+                if (contentId === 'emergency-content') icon.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        // บันทึกสถานะลง LocalStorage
+        function saveState() {
+            try {
+                localStorage.setItem('cpg_blood_state', JSON.stringify(state));
+            } catch (e) {
+                console.log('Local storage not supported/available in this context.');
+            }
+        }
+
+        // เริ่มใหม่ (Reset)
+        function resetChecklist() {
+            state = {};
+            saveState();
+            
+            // Uncheck all UI boxes manually
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+            });
+            
+            // Remove line-through classes
+            document.querySelectorAll('span[id^="text-"]').forEach(span => {
+                span.classList.remove('text-gray-400', 'line-through');
+                if (span.id.startsWith('text-em')) {
+                    span.classList.add('text-gray-800', 'font-medium');
+                } else {
+                    span.classList.add('text-gray-700');
+                }
+            });
+
+            updateProgress();
+            showModal('เริ่มใหม่เรียบร้อย', 'เคลียร์รายการเช็คลิสต์ทั้งหมดแล้ว คุณสามารถเริ่มทำใหม่ได้เลย');
+        }
+
+        // ระบบแจ้งเตือน (Modal)
+        function showModal(title, desc) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-desc').innerText = desc;
+            const modal = document.getElementById('message-modal');
+            const content = document.getElementById('message-modal-content');
+            
+            modal.classList.remove('hidden');
+            // Trigger reflow
+            void modal.offsetWidth;
+            
+            modal.classList.add('opacity-100');
+            content.classList.remove('scale-95');
+            content.classList.add('scale-100');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('message-modal');
+            const content = document.getElementById('message-modal-content');
+            
+            modal.classList.remove('opacity-100');
+            content.classList.remove('scale-100');
+            content.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        // เริ่มต้นการทำงานเมื่อโหลดเสร็จ
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
