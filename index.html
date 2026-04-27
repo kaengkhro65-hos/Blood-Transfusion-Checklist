@@ -54,12 +54,6 @@
             color: #9ca3af;
             text-decoration: line-through;
         }
-        
-        /* Smooth reveal for sections */
-        .section-content {
-            transition: max-height 0.3s ease-out, padding 0.3s ease;
-            overflow: hidden;
-        }
     </style>
 </head>
 <body class="text-gray-800 pb-20">
@@ -79,38 +73,20 @@
             </button>
         </div>
         <div class="p-4 bg-white border-b border-gray-200">
-            <div class="flex justify-between text-sm font-semibold text-gray-600 mb-2">
-                <span>ความคืบหน้า (Progress)</span>
-                <span id="progress-text">0%</span>
+            <div class="flex justify-between text-sm font-semibold text-gray-600 mb-2 max-w-5xl mx-auto">
+                <span>ความคืบหน้า (Progress) <span id="progress-count" class="text-xs text-gray-400 font-normal ml-1"></span></span>
+                <span id="progress-text" class="text-red-600">0%</span>
             </div>
-            <div class="w-full bg-gray-200 rounded-full h-2.5">
+            <div class="w-full bg-gray-200 rounded-full h-2.5 max-w-5xl mx-auto">
                 <div id="progress-bar" class="bg-red-500 h-2.5 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
             </div>
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="container mx-auto max-w-md p-4 space-y-4" id="checklist-container">
-        <!-- Checklist items will be injected here via JavaScript -->
+    <!-- Main Content: 4 Cards Grid -->
+    <main class="container mx-auto max-w-5xl p-4 grid grid-cols-1 md:grid-cols-2 gap-6 mt-4" id="checklist-container">
+        <!-- Cards will be injected here via JavaScript -->
     </main>
-
-    <!-- Emergency Section (ภาวะแทรกซ้อน) -->
-    <section class="container mx-auto max-w-md p-4 mt-6">
-        <div class="bg-red-50 border border-red-200 rounded-xl overflow-hidden shadow-sm">
-            <button onclick="toggleSection('emergency-content', 'emergency-icon')" class="w-full bg-red-100 text-red-700 p-4 font-bold flex justify-between items-center text-left">
-                <span class="flex items-center gap-2">
-                    <i class="ph-fill ph-warning-octagon text-2xl"></i>
-                    กรณีฉุกเฉิน / ภาวะแทรกซ้อน
-                </span>
-                <i id="emergency-icon" class="ph ph-caret-down text-xl transition-transform"></i>
-            </button>
-            <div id="emergency-content" class="section-content bg-white hidden">
-                <div class="p-4 space-y-3" id="emergency-container">
-                    <!-- Emergency items injected via JS -->
-                </div>
-            </div>
-        </div>
-    </section>
 
     <!-- Modal for Messages (แทน alert) -->
     <div id="message-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
@@ -129,13 +105,14 @@
     </div>
 
     <script>
-        // ข้อมูล Checklist
+        // ข้อมูล Checklist รวมทั้ง 4 การ์ด
         const checklistData = [
             {
                 id: 'pre',
                 title: '1. ก่อนให้เลือด (Pre-transfusion)',
-                color: 'blue',
+                iconColor: 'text-blue-500',
                 icon: 'ph-clipboard-text',
+                isEmergency: false,
                 items: [
                     { id: 'pre1', text: 'ตรวจสอบคำสั่งแพทย์ (Doctor order)' },
                     { id: 'pre2', text: 'ตรวจสอบความถูกต้องของผู้ป่วย (ชื่อ-สกุล, HN, ป้ายข้อมือ)' },
@@ -148,8 +125,9 @@
             {
                 id: 'during',
                 title: '2. ขณะให้เลือด (During transfusion)',
-                color: 'orange',
+                iconColor: 'text-orange-500',
                 icon: 'ph-clock',
+                isEmergency: false,
                 items: [
                     { id: 'dur1', text: 'เริ่มให้เลือดช้าๆ (2-5 ml/min) ใน 15 นาทีแรก' },
                     { id: 'dur2', text: 'เฝ้าสังเกตอาการผู้ป่วยอย่างใกล้ชิดตลอด 15 นาทีแรก (เฝ้าระวังภาวะแพ้รุนแรง)' },
@@ -160,23 +138,30 @@
             {
                 id: 'post',
                 title: '3. หลังให้เลือด (Post-transfusion)',
-                color: 'green',
+                iconColor: 'text-green-500',
                 icon: 'ph-check-circle',
+                isEmergency: false,
                 items: [
                     { id: 'pos1', text: 'Flush สายด้วย 0.9% NSS เพื่อล้างเลือดในสายให้หมด' },
                     { id: 'pos2', text: 'วัดและบันทึกสัญญาณชีพ (V/S) หลังให้เลือดเสร็จทันที' },
                     { id: 'pos3', text: 'ทิ้งถุงเลือดและชุดให้เลือดลงในถังขยะติดเชื้ออย่างถูกต้อง' },
                     { id: 'pos4', text: 'บันทึกใน Nurse note (เวลาเริ่ม-หมด, ชนิด/ปริมาณเลือด, Unit No., อาการ)' }
                 ]
+            },
+            {
+                id: 'emergency',
+                title: '4. กรณีฉุกเฉิน / ภาวะแทรกซ้อน',
+                iconColor: 'text-red-600',
+                icon: 'ph-warning-octagon',
+                isEmergency: true,
+                items: [
+                    { id: 'em1', text: 'หยุดให้เลือดทันที! (Stop transfusion)' },
+                    { id: 'em2', text: 'เปลี่ยนชุดสายน้ำเกลือใหม่ และให้ 0.9% NSS หยดช้าๆ (KVO)' },
+                    { id: 'em3', text: 'ประเมิน V/S และรายงานแพทย์เวรทันที' },
+                    { id: 'em4', text: 'ตรวจสอบป้ายเลือด ใบคล้องเลือด และข้อมูลผู้ป่วยซ้ำ' },
+                    { id: 'em5', text: 'ส่งถุงเลือดที่เหลือพร้อมชุดสายให้เลือด คืนธนาคารเลือดเพื่อตรวจสอบ' }
+                ]
             }
-        ];
-
-        const emergencyData = [
-            { id: 'em1', text: 'หยุดให้เลือดทันที! (Stop transfusion)' },
-            { id: 'em2', text: 'เปลี่ยนชุดสายน้ำเกลือใหม่ และให้ 0.9% NSS หยดช้าๆ (KVO)' },
-            { id: 'em3', text: 'ประเมิน V/S และรายงานแพทย์เวรทันที' },
-            { id: 'em4', text: 'ตรวจสอบป้ายเลือด ใบคล้องเลือด และข้อมูลผู้ป่วยซ้ำ' },
-            { id: 'em5', text: 'ส่งถุงเลือดที่เหลือพร้อมชุดสายให้เลือด คืนธนาคารเลือดเพื่อตรวจสอบ' }
         ];
 
         // สถานะเก็บข้อมูล Checkbox
@@ -184,42 +169,45 @@
 
         // ฟังก์ชันเริ่มการทำงาน
         function init() {
-            renderChecklist();
-            renderEmergency();
+            renderCards();
             updateProgress();
         }
 
-        // สร้าง HTML สำหรับ Checklist ปกติ
-        function renderChecklist() {
+        // สร้าง HTML สำหรับ Cards ทั้ง 4 ใบ
+        function renderCards() {
             const container = document.getElementById('checklist-container');
             container.innerHTML = '';
 
             checklistData.forEach(section => {
-                const sectionEl = document.createElement('div');
-                sectionEl.className = 'bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden';
+                // กำหนด Theme สีของการ์ดแยกตามประเภท
+                const cardBgClass = section.isEmergency ? 'bg-red-50 border-red-200 shadow-md' : 'bg-white border-gray-200 shadow-sm hover:shadow-md';
+                const headerClass = section.isEmergency ? 'bg-red-100 text-red-800 border-red-200' : 'bg-gray-50 text-gray-800 border-gray-100';
+                const contentBgClass = section.isEmergency ? 'bg-red-50/50' : 'bg-white';
                 
-                // Header
+                const cardEl = document.createElement('div');
+                cardEl.className = `rounded-2xl border overflow-hidden flex flex-col h-full transition-shadow duration-300 ${cardBgClass}`;
+                
+                // Card Header
                 const headerHtml = `
-                    <button onclick="toggleSection('${section.id}-content', '${section.id}-icon')" class="w-full p-4 flex justify-between items-center bg-white hover:bg-gray-50 transition-colors border-b border-gray-100">
-                        <div class="flex items-center gap-3 font-semibold text-gray-800">
-                            <i class="ph ${section.icon} text-2xl text-${section.color}-500"></i>
-                            ${section.title}
-                        </div>
-                        <i id="${section.id}-icon" class="ph ph-caret-up text-gray-400 transition-transform"></i>
-                    </button>
+                    <div class="w-full p-4 flex items-center gap-3 font-bold border-b ${headerClass}">
+                        <i class="ph-fill ${section.icon} text-2xl ${section.iconColor}"></i>
+                        <span class="text-lg">${section.title}</span>
+                    </div>
                 `;
 
-                // Items
-                let itemsHtml = `<div id="${section.id}-content" class="section-content p-4 space-y-4 bg-gray-50/50">`;
+                // Card Items
+                let itemsHtml = `<div class="p-5 space-y-4 flex-1 ${contentBgClass}">`;
                 section.items.forEach(item => {
                     const isChecked = state[item.id] ? 'checked' : '';
-                    const textClass = state[item.id] ? 'checked-text' : 'text-gray-700';
+                    const defaultTextClass = section.isEmergency ? 'text-gray-900 font-medium' : 'text-gray-700';
+                    const textClass = state[item.id] ? 'checked-text' : defaultTextClass;
+                    
                     itemsHtml += `
                         <label class="flex items-start gap-3 cursor-pointer group">
                             <div class="flex-shrink-0 mt-0.5">
-                                <input type="checkbox" id="${item.id}" class="custom-checkbox" ${isChecked} onchange="toggleItem('${item.id}', true)">
+                                <input type="checkbox" id="${item.id}" class="custom-checkbox" ${isChecked} onchange="toggleItem('${item.id}', ${!section.isEmergency})">
                             </div>
-                            <span id="text-${item.id}" class="text-sm leading-relaxed select-none ${textClass} transition-colors duration-200">
+                            <span id="text-${item.id}" class="text-[15px] leading-relaxed select-none ${textClass} transition-colors duration-200">
                                 ${item.text}
                             </span>
                         </label>
@@ -227,30 +215,8 @@
                 });
                 itemsHtml += `</div>`;
 
-                sectionEl.innerHTML = headerHtml + itemsHtml;
-                container.appendChild(sectionEl);
-            });
-        }
-
-        // สร้าง HTML สำหรับ Emergency
-        function renderEmergency() {
-            const container = document.getElementById('emergency-container');
-            container.innerHTML = '';
-            
-            emergencyData.forEach(item => {
-                const isChecked = state[item.id] ? 'checked' : '';
-                const textClass = state[item.id] ? 'checked-text' : 'text-gray-800 font-medium';
-                const html = `
-                    <label class="flex items-start gap-3 cursor-pointer bg-red-50 p-3 rounded-lg border border-red-100 hover:bg-red-100 transition-colors">
-                        <div class="flex-shrink-0 mt-0.5">
-                            <input type="checkbox" id="${item.id}" class="custom-checkbox" ${isChecked} onchange="toggleItem('${item.id}', false)">
-                        </div>
-                        <span id="text-${item.id}" class="text-sm leading-relaxed select-none ${textClass} transition-colors duration-200">
-                            ${item.text}
-                        </span>
-                    </label>
-                `;
-                container.innerHTML += html;
+                cardEl.innerHTML = headerHtml + itemsHtml;
+                container.appendChild(cardEl);
             });
         }
 
@@ -263,14 +229,14 @@
             
             // อัปเดต CSS ข้อความ
             if (checkbox.checked) {
-                textSpan.classList.add('text-gray-400', 'line-through');
-                textSpan.classList.remove('text-gray-700', 'text-gray-800', 'font-medium');
+                textSpan.classList.add('text-gray-400', 'line-through', 'checked-text');
+                textSpan.classList.remove('text-gray-700', 'text-gray-900', 'font-medium');
             } else {
-                textSpan.classList.remove('text-gray-400', 'line-through');
+                textSpan.classList.remove('text-gray-400', 'line-through', 'checked-text');
                 if (isNormalItem) {
                     textSpan.classList.add('text-gray-700');
                 } else {
-                    textSpan.classList.add('text-gray-800', 'font-medium');
+                    textSpan.classList.add('text-gray-900', 'font-medium');
                 }
             }
 
@@ -278,45 +244,39 @@
             if (isNormalItem) updateProgress();
         }
 
-        // คำนวณความคืบหน้า (Progress Bar)
+        // คำนวณความคืบหน้า (Progress Bar) - คำนวณเฉพาะรายการปกติ
         function updateProgress() {
             let total = 0;
             let checked = 0;
 
             checklistData.forEach(section => {
-                section.items.forEach(item => {
-                    total++;
-                    if (state[item.id]) checked++;
-                });
+                if (!section.isEmergency) {
+                    section.items.forEach(item => {
+                        total++;
+                        if (state[item.id]) checked++;
+                    });
+                }
             });
 
             const percentage = Math.round((checked / total) * 100);
-            document.getElementById('progress-bar').style.width = percentage + '%';
-            document.getElementById('progress-text').innerText = percentage + '%';
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            
+            progressBar.style.width = percentage + '%';
+            progressText.innerText = percentage + '%';
+            document.getElementById('progress-count').innerText = `(${checked}/${total})`;
 
             // เปลี่ยนสี Progress Bar เมื่อเต็ม 100%
             if (percentage === 100) {
-                document.getElementById('progress-bar').classList.remove('bg-red-500');
-                document.getElementById('progress-bar').classList.add('bg-green-500');
+                progressBar.classList.remove('bg-red-500');
+                progressBar.classList.add('bg-green-500');
+                progressText.classList.remove('text-red-600');
+                progressText.classList.add('text-green-600');
             } else {
-                document.getElementById('progress-bar').classList.remove('bg-green-500');
-                document.getElementById('progress-bar').classList.add('bg-red-500');
-            }
-        }
-
-        // เปิด/ปิด Section
-        function toggleSection(contentId, iconId) {
-            const content = document.getElementById(contentId);
-            const icon = document.getElementById(iconId);
-            
-            if (content.classList.contains('hidden')) {
-                content.classList.remove('hidden');
-                icon.style.transform = 'rotate(0deg)';
-                if (contentId === 'emergency-content') icon.style.transform = 'rotate(180deg)';
-            } else {
-                content.classList.add('hidden');
-                icon.style.transform = 'rotate(180deg)';
-                if (contentId === 'emergency-content') icon.style.transform = 'rotate(0deg)';
+                progressBar.classList.remove('bg-green-500');
+                progressBar.classList.add('bg-red-500');
+                progressText.classList.remove('text-green-600');
+                progressText.classList.add('text-red-600');
             }
         }
 
@@ -325,7 +285,7 @@
             try {
                 localStorage.setItem('cpg_blood_state', JSON.stringify(state));
             } catch (e) {
-                console.log('Local storage not supported/available in this context.');
+                console.log('Local storage not supported.');
             }
         }
 
@@ -339,11 +299,11 @@
                 cb.checked = false;
             });
             
-            // Remove line-through classes
+            // Remove line-through classes and reset colors
             document.querySelectorAll('span[id^="text-"]').forEach(span => {
-                span.classList.remove('text-gray-400', 'line-through');
+                span.classList.remove('text-gray-400', 'line-through', 'checked-text');
                 if (span.id.startsWith('text-em')) {
-                    span.classList.add('text-gray-800', 'font-medium');
+                    span.classList.add('text-gray-900', 'font-medium');
                 } else {
                     span.classList.add('text-gray-700');
                 }
